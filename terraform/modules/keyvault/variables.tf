@@ -19,3 +19,8 @@ variable "redis_connection_string" {
   type      = string
   sensitive = true
 }
+
+variable "deployer_object_id" {
+  type        = string
+  description = "Object ID of the identity running `terraform apply` — granted Key Vault Secrets Officer so it can write the initial secret (RBAC-enabled vaults grant nobody by default)."
+}

@@ -18,8 +18,8 @@ spec:
         podIdentity:
           azureWorkload:
             enabled: true
-            clientId: "7f612430-3643-4447-a0da-6a02f9dee0d0"
-            tenantId: "215b7ce2-5263-4593-a622-da030405d151"
+            clientId: "ba75ea83-4923-48a0-aa63-35b59053dfa9"
+            tenantId: "104704fd-f711-4575-99d5-8a6588951c90"
 
   destination:
     server: https://kubernetes.default.svc

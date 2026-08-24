@@ -12,19 +12,19 @@ resource "azurerm_user_assigned_identity" "worker" {
 resource "azurerm_federated_identity_credential" "worker" {
   for_each = toset(var.workers)
 
-  name            = each.key
-  parent_id       = azurerm_user_assigned_identity.worker[each.key].id
-  audience        = ["api://AzureADTokenExchange"]
-  issuer          = var.oidc_issuer_url
-  subject         = "system:serviceaccount:${var.k8s_namespace}:${each.key}-sa"
+  name                      = each.key
+  user_assigned_identity_id = azurerm_user_assigned_identity.worker[each.key].id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:${var.k8s_namespace}:${each.key}-sa"
 }
 
 resource "azurerm_federated_identity_credential" "checkoutservice_core" {
-  name      = "checkoutservice-core"
-  parent_id = azurerm_user_assigned_identity.worker["checkoutservice-worker"].id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = var.oidc_issuer_url
-  subject   = "system:serviceaccount:core:checkoutservice-sa"
+  name                      = "checkoutservice-core"
+  user_assigned_identity_id = azurerm_user_assigned_identity.worker["checkoutservice-worker"].id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:core:checkoutservice-sa"
 }
 
 # Federated Identity Credential (KEDA operator override)
@@ -34,11 +34,11 @@ resource "azurerm_federated_identity_credential" "checkoutservice_core" {
 resource "azurerm_federated_identity_credential" "keda_override" {
   for_each = toset(var.workers)
 
-  name      = "${each.key}-keda-override"
-  parent_id = azurerm_user_assigned_identity.worker[each.key].id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = var.oidc_issuer_url
-  subject   = "system:serviceaccount:${var.keda_namespace}:keda-operator"
+  name                      = "${each.key}-keda-override"
+  user_assigned_identity_id = azurerm_user_assigned_identity.worker[each.key].id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:${var.keda_namespace}:keda-operator"
 }
 
 #  Service Bus RBAC 
@@ -68,11 +68,11 @@ resource "azurerm_user_assigned_identity" "keda_operator" {
 }
 
 resource "azurerm_federated_identity_credential" "keda_operator" {
-  name      = "keda-operator"
-  parent_id = azurerm_user_assigned_identity.keda_operator.id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = var.oidc_issuer_url
-  subject   = "system:serviceaccount:${var.keda_namespace}:keda-operator"
+  name                      = "keda-operator"
+  user_assigned_identity_id = azurerm_user_assigned_identity.keda_operator.id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:${var.keda_namespace}:keda-operator"
 }
 
 resource "azurerm_role_assignment" "keda_servicebus_receiver" {
@@ -87,19 +87,19 @@ resource "azurerm_role_assignment" "keda_servicebus_receiver" {
 # (reusing the worker identities already created above).
 
 resource "azurerm_federated_identity_credential" "cartservice_core" {
-  name      = "cartservice-core"
-  parent_id = azurerm_user_assigned_identity.worker["cartservice-worker"].id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = var.oidc_issuer_url
-  subject   = "system:serviceaccount:core:cartservice-sa"
+  name                      = "cartservice-core"
+  user_assigned_identity_id = azurerm_user_assigned_identity.worker["cartservice-worker"].id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:core:cartservice-sa"
 }
 
 resource "azurerm_federated_identity_credential" "productcatalogservice_core" {
-  name      = "productcatalogservice-core"
-  parent_id = azurerm_user_assigned_identity.worker["productcatalogservice-worker"].id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = var.oidc_issuer_url
-  subject   = "system:serviceaccount:core:productcatalogservice-sa"
+  name                      = "productcatalogservice-core"
+  user_assigned_identity_id = azurerm_user_assigned_identity.worker["productcatalogservice-worker"].id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = var.oidc_issuer_url
+  subject                   = "system:serviceaccount:core:productcatalogservice-sa"
 }
 
 # ─── Cosmos DB RBAC ───────────────────────────────────────────────────────────
@@ -112,6 +112,25 @@ resource "azurerm_cosmosdb_sql_role_assignment" "productcatalog_data_contributor
   role_definition_id  = "${var.cosmos_account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
   principal_id        = azurerm_user_assigned_identity.worker["productcatalogservice-worker"].principal_id
   scope               = var.cosmos_account_id
+}
+
+# Cosmos DB RBAC is data-plane and separate from Azure RBAC — creating the
+# account grants nobody data access, not even the identity running
+# `terraform apply`. Without this, null_resource.seed_cosmos 403s trying to
+# read/write the products container.
+resource "azurerm_cosmosdb_sql_role_assignment" "deployer_data_contributor" {
+  resource_group_name = var.rg_name
+  account_name        = var.cosmos_account_name
+  role_definition_id  = "${var.cosmos_account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
+  principal_id        = var.deployer_object_id
+  scope               = var.cosmos_account_id
+}
+
+# Cosmos DB RBAC assignments take a little while to propagate; seeding
+# immediately after tends to 403 otherwise.
+resource "time_sleep" "wait_for_cosmos_rbac" {
+  depends_on      = [azurerm_cosmosdb_sql_role_assignment.deployer_data_contributor]
+  create_duration = "90s"
 }
 
 # ─── Redis IAM ────────────────────────────────────────────────────────────────
@@ -150,11 +169,11 @@ resource "azurerm_user_assigned_identity" "github_actions" {
 }
 
 resource "azurerm_federated_identity_credential" "github_actions" {
-  name      = "github-actions-ci"
-  parent_id = azurerm_user_assigned_identity.github_actions.id
-  audience  = ["api://AzureADTokenExchange"]
-  issuer    = "https://token.actions.githubusercontent.com"
-  subject   = "repo:${var.github_repo}:ref:${var.github_ref}"
+  name                      = "github-actions-ci"
+  user_assigned_identity_id = azurerm_user_assigned_identity.github_actions.id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = "https://token.actions.githubusercontent.com"
+  subject                   = "repo:${var.github_repo}:ref:${var.github_ref}"
 }
 
 resource "azurerm_role_assignment" "github_actions_acr_push" {

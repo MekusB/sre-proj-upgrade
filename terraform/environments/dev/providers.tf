@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/null"
       version = "~> 3.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
 
   # Remote state backend — placeholder, not active yet. State is still local
@@ -32,4 +36,12 @@ terraform {
 
 provider "azurerm" {
   features {}
+
+  # Skips the "list all resource providers" call the provider otherwise makes
+  # on every run to auto-register missing ones. That call is what's returning
+  # a truncated/empty response here ("unexpected end of JSON input") — a
+  # transient network issue, not an auth problem (CLI token is valid). All
+  # providers this config needs are already registered from prior successful
+  # applies, so skip the call entirely instead of hoping it succeeds.
+  resource_provider_registrations = "none"
 }

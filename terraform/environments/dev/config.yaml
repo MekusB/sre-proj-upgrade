@@ -33,8 +33,11 @@ redis:
   # AKS outbound NAT IP — pods reach Redis via this public IP (Azure Cache for Redis
   # does not support VNet service endpoints, so the private subnet range won't work).
   # Update this value if the AKS cluster is rebuilt and gets a new egress IP.
-  # Run: az aks show --name sre-aks --resource-group sre-core-rg --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv | xargs az network public-ip show --ids --query ipAddress -o tsv
-  aks_outbound_ip: "20.72.203.235"
+  # Run (Git Bash on Windows needs MSYS_NO_PATHCONV=1, otherwise the resource
+  # ID's leading "/" gets mangled into a Windows path):
+  #   ID=$(az aks show --name sre-aks --resource-group sre-core-rg --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
+  #   MSYS_NO_PATHCONV=1 az network public-ip show --ids "$ID" --query ipAddress -o tsv
+  aks_outbound_ip: "48.200.80.188"
 
 acr:
   # Must be globally unique across Azure (alphanumeric only, no hyphens, 5-50 chars).
@@ -51,3 +54,12 @@ keyvault:
 # only workflow runs from this exact repo (on github_ref, default main) can
 # assume the CI identity and push to ACR.
 github_repo: "MekusB/sre-proj-upgrade"
+
+# Absolute path to python.exe on the machine running `terraform apply`, used
+# by the Cosmos-seeding local-exec provisioner. Not "python"/"py" — on
+# Windows those resolve to a Microsoft Store app-execution-alias stub instead
+# of a real interpreter unless every terminal/IDE process is fully relaunched
+# after install (a new tab isn't enough; PATH is only re-read at process
+# start). Find yours with: (Get-Command python).Source in a brand-new
+# PowerShell window opened after installing Python.
+python_executable: "C:/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe"

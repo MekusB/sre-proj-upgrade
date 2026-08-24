@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 module "network" {
-  source      = "../../modules/network"
+  source = "../../modules/network"
 
   location    = local.config.location
   rg_name     = azurerm_resource_group.rg.name
@@ -29,25 +29,25 @@ module "network" {
 # }
 
 module "aks" {
-  source           = "../../modules/aks"
+  source = "../../modules/aks"
 
-  location         = local.config.location
-  rg_name          = azurerm_resource_group.rg.name
-  cluster_name     = local.config.aks.cluster_name
-  vm_size          = local.config.aks.vm_size
-  node_min         = local.config.aks.node_min
-  node_max         = local.config.aks.node_max
-  user_vm_size     = local.config.aks.user_vm_size
-  user_node_min    = local.config.aks.user_node_min
-  user_node_max    = local.config.aks.user_node_max
-  subnet_id        = module.network.aks_subnet_id
+  location      = local.config.location
+  rg_name       = azurerm_resource_group.rg.name
+  cluster_name  = local.config.aks.cluster_name
+  vm_size       = local.config.aks.vm_size
+  node_min      = local.config.aks.node_min
+  node_max      = local.config.aks.node_max
+  user_vm_size  = local.config.aks.user_vm_size
+  user_node_min = local.config.aks.user_node_min
+  user_node_max = local.config.aks.user_node_max
+  subnet_id     = module.network.aks_subnet_id
   # log_analytics_id = module.observability.log_analytics_id  # commented out with module.observability above
-  service_cidr     = local.config.aks.service_cidr
-  dns_service_ip   = local.config.aks.dns_service_ip
+  service_cidr   = local.config.aks.service_cidr
+  dns_service_ip = local.config.aks.dns_service_ip
 }
 
 module "cosmos" {
-  source     = "../../modules/cosmos"
+  source = "../../modules/cosmos"
 
   location   = local.config.location
   rg_name    = azurerm_resource_group.rg.name
@@ -56,7 +56,7 @@ module "cosmos" {
 }
 
 module "servicebus" {
-  source   = "../../modules/servicebus"
+  source = "../../modules/servicebus"
 
   location = local.config.location
   rg_name  = azurerm_resource_group.rg.name
@@ -64,7 +64,7 @@ module "servicebus" {
 }
 
 module "redis" {
-  source   = "../../modules/redis"
+  source = "../../modules/redis"
 
   location        = local.config.location
   rg_name         = azurerm_resource_group.rg.name
@@ -84,10 +84,11 @@ module "acr" {
 module "keyvault" {
   source = "../../modules/keyvault"
 
-  location  = local.config.location
-  rg_name   = azurerm_resource_group.rg.name
-  name      = local.config.keyvault.name
-  tenant_id = data.azurerm_client_config.current.tenant_id
+  location           = local.config.location
+  rg_name            = azurerm_resource_group.rg.name
+  name               = local.config.keyvault.name
+  tenant_id          = data.azurerm_client_config.current.tenant_id
+  deployer_object_id = data.azurerm_client_config.current.object_id
 
   # Same connection string shape as the manual `kubectl create secret` command
   # this replaces (see the old Step 5 in DevOps-README.md history).
@@ -108,6 +109,7 @@ module "workload_identity" {
   aks_kubelet_identity_object_id = module.aks.kubelet_identity_object_id
   github_repo                    = local.config.github_repo
   keyvault_id                    = module.keyvault.id
+  deployer_object_id             = data.azurerm_client_config.current.object_id
 }
 
 # ── Cosmos DB seed ───────────────────────────────────────────────────────────
@@ -120,7 +122,12 @@ resource "null_resource" "seed_cosmos" {
   }
 
   provisioner "local-exec" {
-    command = "python ${path.module}/../../../scripts/seed_cosmos.py"
+    # Absolute path, not bare "python" — on Windows, "python"/"python3" are
+    # shadowed by a Microsoft Store app-execution-alias stub even when a real
+    # interpreter is installed and on PATH, and PATH edits don't reach
+    # already-running terminal/IDE processes until they're fully relaunched
+    # (not just a new tab). See python_executable in config.yaml.
+    command = "${local.config.python_executable} ${path.module}/../../../scripts/seed_cosmos.py"
 
     environment = {
       COSMOS_ENDPOINT  = module.cosmos.endpoint

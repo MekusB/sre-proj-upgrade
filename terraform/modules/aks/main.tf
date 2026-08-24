@@ -9,13 +9,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   default_node_pool {
-    name                        = "system"
-    vm_size                     = var.vm_size
-    vnet_subnet_id              = var.subnet_id
-    auto_scaling_enabled        = true
-    min_count                   = var.node_min
-    max_count                   = var.node_max
-    max_pods                    = 110
+    name                 = "system"
+    vm_size              = var.vm_size
+    vnet_subnet_id       = var.subnet_id
+    auto_scaling_enabled = true
+    min_count            = var.node_min
+    max_count            = var.node_max
+    max_pods             = 110
     # Allows azurerm to rotate the default pool to a new SKU without destroying
     # the cluster. Terraform creates a pool named "systtmp", drains & deletes
     # the old "system" pool, then removes the temp pool.

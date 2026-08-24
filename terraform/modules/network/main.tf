@@ -11,7 +11,7 @@ resource "azurerm_subnet" "aks" {
   virtual_network_name = azurerm_virtual_network.vnet.name
   # /22 = 1022 usable IPs; required for Azure CNI with 11+ microservices
   # each pod gets its own IP from this subnet
-  address_prefixes     = [var.subnet_cidr]
+  address_prefixes = [var.subnet_cidr]
 
   depends_on = [azurerm_virtual_network.vnet]
 }

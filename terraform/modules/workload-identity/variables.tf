@@ -85,3 +85,8 @@ variable "keyvault_id" {
   type        = string
   description = "Resource ID of the Key Vault holding the Redis connection string"
 }
+
+variable "deployer_object_id" {
+  type        = string
+  description = "Object ID of the identity running `terraform apply` — granted Cosmos DB Built-in Data Contributor so the seed_cosmos.py local-exec provisioner can write the product catalog. Cosmos DB RBAC is data-plane and separate from Azure RBAC; nothing else grants the deployer access to it."
+}
