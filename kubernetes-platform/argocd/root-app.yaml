@@ -8,7 +8,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    repoURL: https://github.com/MekusB/sre-proj-upgrade
     targetRevision: main
     path: kubernetes-platform/argocd/apps
 

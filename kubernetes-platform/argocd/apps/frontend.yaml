@@ -10,9 +10,9 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    repoURL: https://github.com/MekusB/sre-proj-upgrade
     targetRevision: main
-    path: helm/core-services/frontend
+    path: kustomize/overlays/dev/frontend
 
   destination:
     server: https://kubernetes.default.svc

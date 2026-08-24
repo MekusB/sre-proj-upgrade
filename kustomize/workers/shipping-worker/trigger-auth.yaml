@@ -1,0 +1,9 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: shipping-worker-trigger-auth
+  namespace: workers
+spec:
+  podIdentity:
+    provider: azure-workload
+    identityId: "7cd1ff0c-20cd-45b0-acee-5e9f70760afa"

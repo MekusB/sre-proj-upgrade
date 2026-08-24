@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice
+  namespace: core
+  labels:
+    app: productcatalogservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productcatalogservice
+  template:
+    metadata:
+      labels:
+        app: productcatalogservice
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: productcatalogservice-sa
+      terminationGracePeriodSeconds: 5
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: server
+          image: jukpozi/productcatalogservice:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          ports:
+            - containerPort: 3550
+          env:
+            - name: PORT
+              value: "3550"
+            - name: ENABLE_TRACING
+              value: "1"
+            - name: ENABLE_PROFILER
+              value: "0"
+            - name: COLLECTOR_SERVICE_ADDR
+              value: "otel-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "productcatalogservice"
+            - name: COSMOS_ENDPOINT
+              value: "https://sre-cosmos.documents.azure.com:443/"
+            - name: COSMOS_DATABASE
+              value: "product-catalog-db"
+            - name: COSMOS_CONTAINER
+              value: "products"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            grpc:
+              port: 3550
+          livenessProbe:
+            grpc:
+              port: 3550

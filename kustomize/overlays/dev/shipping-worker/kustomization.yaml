@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../workers/shipping-worker
+images:
+  - name: jukpozi/shippingservice
+    newName: srecoreacr.azurecr.io/shippingservice
+    newTag: latest

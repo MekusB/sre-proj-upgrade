@@ -1,0 +1,52 @@
+# SLO-linked alerts.
+#
+# SRE-README.md scopes 3 SLOs: checkout availability, checkout latency, and
+# queue processing lag. Only queue lag is alertable today — checkoutservice
+# (and every other service) currently only emits OTEL *traces* to App
+# Insights, not *metrics* to Prometheus, so there is no request-count or
+# request-duration series to compute an availability or latency SLO from.
+# Fixing that means enabling the OTEL Collector's spanmetrics connector (or
+# adding a metrics SDK to checkoutservice) to derive RED metrics from the
+# traces already being collected — until then, an availability/latency
+# PrometheusRule here would reference metrics that don't exist and silently
+# never fire. Tracked as the next step in SRE-README.md rather than faked
+# here.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sre-platform-alerts
+  namespace: observability
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: queue-processing-lag
+      rules:
+        - alert: ServiceBusBacklogSustained
+          expr: keda_scaler_metrics_value{scaledObject=~".*-worker-scaledobject"} > 20
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.scaledObject }} has a sustained Service Bus backlog"
+            description: "{{ $labels.scaledObject }} has reported a queue metric above 20 for 10m straight. KEDA should be scaling the worker up — check `kubectl get pods -n workers` and `kubectl get scaledobject -n workers` for stuck scaling."
+
+    - name: pod-health
+      rules:
+        - alert: PodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace=~"core|workers"}[15m]) > 3
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} is crash-looping"
+            description: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} restarted more than 3 times in 15m."
+
+        - alert: PodOOMKilled
+          expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled", namespace=~"core|workers"} == 1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled"
+            description: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled — check its resource limits in the corresponding kustomize base."

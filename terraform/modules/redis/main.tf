@@ -1,5 +1,5 @@
 resource "azurerm_redis_cache" "redis" {
-  name                = "sre-redis-cart"
+  name                = var.name
   location            = var.location
   resource_group_name = var.rg_name
   capacity            = 1

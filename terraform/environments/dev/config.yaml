@@ -2,14 +2,14 @@ environment: dev
 
 location: westus2
 
-rg_name: jd-core-rg
+rg_name: sre-core-rg
 
 network:
   vnet_cidr: "10.0.0.0/16"
   subnet_cidr: "10.0.0.0/22"
 
 aks:
-  cluster_name: "jd-aks"
+  cluster_name: "sre-aks"
   vm_size: "Standard_D2s_v5"      # B4als_v2 + D2s_v3 + B4ms + B4as_v2 all CapacityRestricted in westus2
   node_min: 1
   node_max: 3
@@ -20,14 +20,34 @@ aks:
   dns_service_ip: "10.1.0.10"
 
 cosmos:
+  # Must be globally unique across Azure (lowercase letters, numbers, hyphens, 3-44 chars).
+  name: "sre-pj-cosmos"
   throughput: 4000
 
 servicebus:
   sku: "Standard"
 
 redis:
+  # Must be globally unique across Azure (forms <name>.redis.cache.windows.net).
+  name: "sre-pj-redis-cart"
   # AKS outbound NAT IP — pods reach Redis via this public IP (Azure Cache for Redis
   # does not support VNet service endpoints, so the private subnet range won't work).
   # Update this value if the AKS cluster is rebuilt and gets a new egress IP.
-  # Run: az aks show --name jd-aks --resource-group jd-core-rg --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv | xargs az network public-ip show --ids --query ipAddress -o tsv
+  # Run: az aks show --name sre-aks --resource-group sre-core-rg --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv | xargs az network public-ip show --ids --query ipAddress -o tsv
   aks_outbound_ip: "20.72.203.235"
+
+acr:
+  # Must be globally unique across Azure (alphanumeric only, no hyphens, 5-50 chars).
+  # Change this if it's already taken before the first `terraform apply`.
+  name: "srepjcoreacr"
+  sku: "Basic"
+
+keyvault:
+  # Must be globally unique across Azure (alphanumeric + hyphens, 3-24 chars).
+  # If you change this, also update kustomize/base/cartservice/secretproviderclass.yaml.
+  name: "sre-core-pj-kv"
+
+# <org>/<repo> — scopes the GitHub Actions OIDC federated credential subject so
+# only workflow runs from this exact repo (on github_ref, default main) can
+# assume the CI identity and push to ACR.
+github_repo: "MekusB/sre-proj-upgrade"

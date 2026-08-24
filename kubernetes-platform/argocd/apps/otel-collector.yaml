@@ -35,28 +35,32 @@ spec:
             prometheus:
               endpoint: "0.0.0.0:8889"
               namespace: otel
-            azuremonitor:
-              connection_string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+            # Commented out — Azure Application Insights is not open source.
+            # Open-source replacement path: Tempo (traces) + Loki (logs),
+            # both OTLP-exportable directly from this collector.
+            # azuremonitor:
+            #   connection_string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
           service:
             pipelines:
-              traces:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [azuremonitor]
+              # traces:
+              #   receivers: [otlp]
+              #   processors: [memory_limiter, batch]
+              #   exporters: [azuremonitor]
               metrics:
                 receivers: [otlp]
                 processors: [memory_limiter, batch]
                 exporters: [prometheus]
-              logs:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [azuremonitor]
-        extraEnvs:
-          - name: APPLICATIONINSIGHTS_CONNECTION_STRING
-            valueFrom:
-              configMapKeyRef:
-                name: appinsights-config
-                key: APPLICATIONINSIGHTS_CONNECTION_STRING
+              # logs:
+              #   receivers: [otlp]
+              #   processors: [memory_limiter, batch]
+              #   exporters: [azuremonitor]
+        # Commented out along with the azuremonitor exporter above.
+        # extraEnvs:
+        #   - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+        #     valueFrom:
+        #       configMapKeyRef:
+        #         name: appinsights-config
+        #         key: APPLICATIONINSIGHTS_CONNECTION_STRING
         ports:
           otlp:
             enabled: true

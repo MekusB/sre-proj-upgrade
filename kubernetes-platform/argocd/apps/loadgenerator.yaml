@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loadgenerator
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sre-platform
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/MekusB/sre-proj-upgrade
+    targetRevision: main
+    path: kustomize/overlays/dev/loadgenerator
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,21 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: shipping-worker-scaledobject
+  namespace: workers
+spec:
+  scaleTargetRef:
+    name: shipping-worker
+  pollingInterval: 10
+  cooldownPeriod: 60
+  minReplicaCount: 0
+  maxReplicaCount: 10
+  triggers:
+    - type: azure-servicebus
+      metadata:
+        namespace: sre-sb-namespace
+        topicName: checkout-events
+        subscriptionName: shipping
+        messageCount: "1"
+      authenticationRef:
+        name: shipping-worker-trigger-auth

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shipping-worker
+  namespace: workers
+spec:
+  podSelector:
+    matchLabels:
+      app: shipping-worker
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 5671
+          protocol: TCP

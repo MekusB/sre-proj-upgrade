@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: checkoutservice
+  namespace: core
+spec:
+  podSelector:
+    matchLabels:
+      app: checkoutservice
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 5050
+          protocol: TCP
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: productcatalogservice
+      ports:
+        - port: 3550
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: cartservice
+      ports:
+        - port: 7070
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: currencyservice
+      ports:
+        - port: 7000
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: shippingservice
+      ports:
+        - port: 50051
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: emailservice
+      ports:
+        - port: 5000
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: paymentservice
+      ports:
+        - port: 50051
+          protocol: TCP
+    # Azure Service Bus — public endpoint, no stable IP to scope to. Tightening
+    # this further needs Private Link (see Infra-README production backlog).
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 5671
+          protocol: TCP

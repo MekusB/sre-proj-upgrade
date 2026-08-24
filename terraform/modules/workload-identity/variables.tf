@@ -59,3 +59,29 @@ variable "redis_id" {
   type        = string
   description = "Resource ID of the Azure Cache for Redis instance"
 }
+
+variable "acr_id" {
+  type        = string
+  description = "Resource ID of the Azure Container Registry"
+}
+
+variable "aks_kubelet_identity_object_id" {
+  type        = string
+  description = "Object ID of the AKS kubelet managed identity — granted AcrPull on the registry"
+}
+
+variable "github_repo" {
+  type        = string
+  description = "GitHub repo in <org>/<repo> form, used to scope the OIDC federated credential subject"
+}
+
+variable "github_ref" {
+  type        = string
+  description = "Git ref CI is allowed to authenticate from"
+  default     = "refs/heads/main"
+}
+
+variable "keyvault_id" {
+  type        = string
+  description = "Resource ID of the Key Vault holding the Redis connection string"
+}

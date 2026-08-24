@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cartservice
+  namespace: core
+spec:
+  podSelector:
+    matchLabels:
+      app: cartservice
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+        - podSelector:
+            matchLabels:
+              app: checkoutservice
+      ports:
+        - port: 7070
+          protocol: TCP
+  egress:
+    # Azure Cache for Redis — public endpoint (see kustomize/README.md on why
+    # aks_outbound_ip firewalling exists at the Azure layer instead).
+    - ports:
+        - port: 6380
+          protocol: TCP

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loadgenerator
+  namespace: core
+spec:
+  podSelector:
+    matchLabels:
+      app: loadgenerator
+  policyTypes:
+    - Ingress
+    - Egress
+  # No ingress rules — nothing calls this pod.
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 80
+          protocol: TCP

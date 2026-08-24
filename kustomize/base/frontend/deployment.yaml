@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: core
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      serviceAccountName: frontend-sa
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: server
+          image: jukpozi/frontend:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: PRODUCT_CATALOG_SERVICE_ADDR
+              value: "productcatalogservice.core.svc.cluster.local:3550"
+            - name: CURRENCY_SERVICE_ADDR
+              value: "currencyservice.core.svc.cluster.local:7000"
+            - name: CART_SERVICE_ADDR
+              value: "cartservice.core.svc.cluster.local:7070"
+            - name: RECOMMENDATION_SERVICE_ADDR
+              value: "recommendationservice.core.svc.cluster.local:8080"
+            - name: SHIPPING_SERVICE_ADDR
+              value: "shippingservice.core.svc.cluster.local:50051"
+            - name: CHECKOUT_SERVICE_ADDR
+              value: "checkoutservice.core.svc.cluster.local:5050"
+            - name: AD_SERVICE_ADDR
+              value: "adservice.core.svc.cluster.local:9555"
+            - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+              value: "shoppingassistantservice.core.svc.cluster.local:8080"
+            - name: ENV_PLATFORM
+              value: "azure"
+            - name: ENABLE_TRACING
+              value: "1"
+            - name: ENABLE_PROFILER
+              value: "0"
+            - name: COLLECTOR_SERVICE_ADDR
+              value: "otel-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "frontend"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            httpGet:
+              path: "/_healthz"
+              port: 8080
+              httpHeaders:
+                - name: "Cookie"
+                  value: "shop_session-id=x-readiness-probe"
+          livenessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            httpGet:
+              path: "/_healthz"
+              port: 8080
+              httpHeaders:
+                - name: "Cookie"
+                  value: "shop_session-id=x-liveness-probe"

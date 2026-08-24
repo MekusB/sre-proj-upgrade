@@ -27,34 +27,40 @@ config:
       endpoint: "0.0.0.0:8889"
       namespace: otel
 
-    # Traces + logs → Azure Application Insights
-    azuremonitor:
-      connection_string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    # Commented out — Azure Application Insights is not open source.
+    # Traces and logs currently have no exporter/pipeline, so they're
+    # collected but dropped. Open-source replacement path: Tempo (traces)
+    # and Loki (logs) — both accept OTLP directly, so this would mean
+    # adding `otlp/tempo` and `otlp/loki` exporters here and pointing the
+    # pipelines below at them instead.
+    # azuremonitor:
+    #   connection_string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
 
   service:
     pipelines:
-      traces:
-        receivers: [otlp]
-        processors: [memory_limiter, batch]
-        exporters: [azuremonitor]
+      # traces:
+      #   receivers: [otlp]
+      #   processors: [memory_limiter, batch]
+      #   exporters: [azuremonitor]
 
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, batch]
         exporters: [prometheus]
 
-      logs:
-        receivers: [otlp]
-        processors: [memory_limiter, batch]
-        exporters: [azuremonitor]
+      # logs:
+      #   receivers: [otlp]
+      #   processors: [memory_limiter, batch]
+      #   exporters: [azuremonitor]
 
-# Inject connection string from the ConfigMap
-extraEnvs:
-  - name: APPLICATIONINSIGHTS_CONNECTION_STRING
-    valueFrom:
-      configMapKeyRef:
-        name: appinsights-config
-        key: APPLICATIONINSIGHTS_CONNECTION_STRING
+# Commented out along with the azuremonitor exporter above — the ConfigMap
+# this referenced (appinsights-config) is also commented out.
+# extraEnvs:
+#   - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+#     valueFrom:
+#       configMapKeyRef:
+#         name: appinsights-config
+#         key: APPLICATIONINSIGHTS_CONNECTION_STRING
 
 ports:
   otlp:

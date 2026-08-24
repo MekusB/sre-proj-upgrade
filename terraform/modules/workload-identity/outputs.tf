@@ -18,3 +18,13 @@ output "keda_operator_client_id" {
   description = "Client ID of the KEDA operator Managed Identity"
   value       = azurerm_user_assigned_identity.keda_operator.client_id
 }
+
+output "github_actions_client_id" {
+  description = "Client ID of the GitHub Actions CI Managed Identity — set as the AZURE_CLIENT_ID repo secret"
+  value       = azurerm_user_assigned_identity.github_actions.client_id
+}
+
+output "github_actions_tenant_id" {
+  description = "Tenant ID for the GitHub Actions CI Managed Identity — set as the AZURE_TENANT_ID repo secret"
+  value       = azurerm_user_assigned_identity.github_actions.tenant_id
+}

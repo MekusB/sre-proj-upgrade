@@ -1,17 +1,23 @@
-# core namespace
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: appinsights-config
-  namespace: core
-data:
-  APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=3ab84262-773c-4bdd-9bbc-cb1c549138d2;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/;LiveEndpoint=https://westus2.livediagnostics.monitor.azure.com/;ApplicationId=cb743b0c-8c66-4eff-8bdf-2f60cfbbea06"
----
-# observability namespace
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: appinsights-config
-  namespace: observability
-data:
-  APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=3ab84262-773c-4bdd-9bbc-cb1c549138d2;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/;LiveEndpoint=https://westus2.livediagnostics.monitor.azure.com/;ApplicationId=cb743b0c-8c66-4eff-8bdf-2f60cfbbea06"
+# Commented out — Application Insights is not open source. Nothing consumes
+# these ConfigMaps anymore (see otel-collector/values.yaml, where the
+# azuremonitor exporter + extraEnvs referencing APPLICATIONINSIGHTS_CONNECTION_STRING
+# are also commented out). Open-source replacement path: Tempo (traces) +
+# Loki (logs), both OTLP-exportable from the existing collector.
+
+# # core namespace
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: appinsights-config
+#   namespace: core
+# data:
+#   APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=3ab84262-773c-4bdd-9bbc-cb1c549138d2;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/;LiveEndpoint=https://westus2.livediagnostics.monitor.azure.com/;ApplicationId=cb743b0c-8c66-4eff-8bdf-2f60cfbbea06"
+# ---
+# # observability namespace
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: appinsights-config
+#   namespace: observability
+# data:
+#   APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=3ab84262-773c-4bdd-9bbc-cb1c549138d2;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/;LiveEndpoint=https://westus2.livediagnostics.monitor.azure.com/;ApplicationId=cb743b0c-8c66-4eff-8bdf-2f60cfbbea06"

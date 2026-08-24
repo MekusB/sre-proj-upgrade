@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      security-events: write
 
     steps:
       - name: Checkout repo
@@ -28,27 +32,52 @@ jobs:
         run: npm test
         continue-on-error: true
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
       - name: Build Docker image
         run: |
           docker build \
-          -t ${{ secrets.DOCKER_USERNAME }}/currencyservice:latest \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/currencyservice:${{ github.sha }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/currencyservice:latest \
           ./services/currencyservice
 
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/currencyservice:latest
+          image-ref: ${{ secrets.ACR_LOGIN_SERVER }}/currencyservice:${{ github.sha }}
           format: table
           exit-code: '1'
           ignore-unfixed: true
           severity: CRITICAL
 
-      - name: Push Docker image
+      - name: Push image to ACR
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/currencyservice:latest
+          az acr login --name ${{ secrets.ACR_NAME }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/currencyservice --all-tags
+
+      - name: Bump image tag in kustomize overlay
+        run: |
+          sed -i "s|newTag:.*|newTag: ${{ github.sha }}|" kustomize/overlays/dev/currencyservice/kustomization.yaml
+
+      - name: Commit and push tag bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kustomize/overlays/dev/currencyservice/kustomization.yaml
+          git commit -m "chore(currencyservice): bump image to ${{ github.sha }}" || echo "no changes to commit"
+          git pull --rebase origin main
+          git push

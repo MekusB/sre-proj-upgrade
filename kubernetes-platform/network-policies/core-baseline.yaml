@@ -1,0 +1,61 @@
+# Default-deny baseline for the `core` namespace. Every pod here gets zero
+# ingress and zero egress unless another NetworkPolicy explicitly allows it —
+# see each service's own networkpolicy.yaml (co-located in its kustomize
+# base) for the specific call-graph edges it needs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: core
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# DNS resolution is needed by literally every pod — without this, the
+# default-deny baseline above would break service discovery entirely.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: core
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Every service that emits OTEL traces/metrics needs this. Applied broadly
+# (podSelector: {}) rather than per-service since it's low-risk and saves
+# re-adding it if tracing gets wired up in the 3 services that don't emit
+# it yet (cartservice, shippingservice, adservice — see kustomize/README.md).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-otel-egress
+  namespace: core
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: opentelemetry-collector
+      ports:
+        - port: 4317
+          protocol: TCP

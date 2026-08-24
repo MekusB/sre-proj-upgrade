@@ -30,6 +30,14 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
+
+  # Installs the Secrets Store CSI Driver + Azure Key Vault provider. Pods use
+  # their own workload identity (not this addon's identity) to authenticate to
+  # Key Vault — see modules/workload-identity for the per-service RBAC grants.
+  key_vault_secrets_provider {
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "2m"
+  }
 }
 
 # User node pool — dedicated workload pool separate from system pool
@@ -47,19 +55,22 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   depends_on = [azurerm_kubernetes_cluster.aks]
 }
 
-# Replaces oms_agent (removed in azurerm v4) — streams AKS control-plane
-# logs and metrics to the existing Log Analytics workspace
-resource "azurerm_monitor_diagnostic_setting" "aks" {
-  name                       = "aks-diagnostics"
-  target_resource_id         = azurerm_kubernetes_cluster.aks.id
-  log_analytics_workspace_id = var.log_analytics_id
-
-  enabled_log { category = "kube-apiserver" }
-  enabled_log { category = "kube-controller-manager" }
-  enabled_log { category = "kube-scheduler" }
-  enabled_log { category = "cluster-autoscaler" }
-
-  enabled_metric {
-  category = "AllMetrics"
- }
-}
+# Commented out — depended on the Log Analytics workspace (terraform/modules/
+# observability), which is commented out for being non-open-source. AKS
+# control-plane logs/metrics currently go nowhere; re-enable this (pointed at
+# a workspace) or replace with an open-source equivalent if that's needed.
+#
+# resource "azurerm_monitor_diagnostic_setting" "aks" {
+#   name                       = "aks-diagnostics"
+#   target_resource_id         = azurerm_kubernetes_cluster.aks.id
+#   log_analytics_workspace_id = var.log_analytics_id
+#
+#   enabled_log { category = "kube-apiserver" }
+#   enabled_log { category = "kube-controller-manager" }
+#   enabled_log { category = "kube-scheduler" }
+#   enabled_log { category = "cluster-autoscaler" }
+#
+#   enabled_metric {
+#   category = "AllMetrics"
+#  }
+# }

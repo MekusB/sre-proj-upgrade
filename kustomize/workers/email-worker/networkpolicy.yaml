@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: email-worker
+  namespace: workers
+spec:
+  podSelector:
+    matchLabels:
+      app: email-worker
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 5671
+          protocol: TCP

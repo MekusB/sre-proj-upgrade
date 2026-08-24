@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      security-events: write
 
     steps:
       - name: Checkout repo
@@ -27,26 +31,53 @@ jobs:
         working-directory: services/checkoutservice
         run: go test ./...
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
       - name: Build Docker image
         run: |
           docker build \
-          -t ${{ secrets.DOCKER_USERNAME }}/checkoutservice:latest \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/checkoutservice:${{ github.sha }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/checkoutservice:latest \
           ./services/checkoutservice
 
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/checkoutservice:latest
+          image-ref: ${{ secrets.ACR_LOGIN_SERVER }}/checkoutservice:${{ github.sha }}
           format: table
           exit-code: '1'
           severity: CRITICAL
 
-      - name: Push Docker image
+      - name: Push image to ACR
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/checkoutservice:latest
+          az acr login --name ${{ secrets.ACR_NAME }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/checkoutservice --all-tags
+
+      - name: Bump image tag in kustomize overlay
+        run: |
+          sed -i "s|newTag:.*|newTag: ${{ github.sha }}|" kustomize/overlays/dev/checkoutservice/kustomization.yaml
+
+      - name: Commit and push tag bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kustomize/overlays/dev/checkoutservice/kustomization.yaml
+          git commit -m "chore(checkoutservice): bump image to ${{ github.sha }}" || echo "no changes to commit"
+          git pull --rebase origin main
+          git push

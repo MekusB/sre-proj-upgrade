@@ -26,9 +26,11 @@ variable "subnet_id" {
   type = string
 }
 
-variable "log_analytics_id" {
-  type = string
-}
+# Commented out along with the diagnostic_setting resource in main.tf that
+# consumed it (Log Analytics is not open source).
+# variable "log_analytics_id" {
+#   type = string
+# }
 
 variable "service_cidr" {
   type = string

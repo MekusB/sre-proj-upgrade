@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping-worker
+  namespace: workers
+  labels:
+    app: shipping-worker
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: shipping-worker
+  template:
+    metadata:
+      labels:
+        app: shipping-worker
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: shippingservice-worker-sa
+      containers:
+        - name: shipping-worker
+          image: jukpozi/shippingservice:latest
+          env:
+            - name: WORKER_MODE
+              value: "true"
+            - name: SERVICEBUS_NAMESPACE
+              value: "sre-sb-namespace"
+            - name: SERVICEBUS_TOPIC
+              value: "checkout-events"
+            - name: SERVICEBUS_SUBSCRIPTION
+              value: "shipping"
+            - name: DISABLE_PROFILER
+              value: "1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

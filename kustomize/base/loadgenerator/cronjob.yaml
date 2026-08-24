@@ -1,0 +1,55 @@
+# Disabled by default (suspend: true) — this generates real checkout traffic,
+# which scales workers and costs money. Two ways to use it:
+#   1. On-demand game day: kubectl create job --from=cronjob/loadgenerator-gameday -n core manual-run-1
+#   2. Recurring validation: set suspend to false (schedule is weekly Monday 09:00 UTC)
+# See README02/game-day-service-bus-backlog.md for the full exercise.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: loadgenerator-gameday
+  namespace: core
+spec:
+  schedule: "0 9 * * 1"
+  suspend: true
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 900
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: loadgenerator
+        spec:
+          restartPolicy: Never
+          serviceAccountName: loadgenerator-sa
+          securityContext:
+            fsGroup: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: loadgenerator
+              image: jukpozi/loadgenerator:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+              env:
+                - name: FRONTEND_ADDR
+                  value: "frontend.core.svc.cluster.local:80"
+                - name: USERS
+                  value: "50"
+                - name: RATE
+                  value: "5"
+                - name: LOCUST_RUN_TIME
+                  value: "10m"
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi

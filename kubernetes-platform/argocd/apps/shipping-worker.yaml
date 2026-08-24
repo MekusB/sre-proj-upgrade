@@ -10,9 +10,9 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    repoURL: https://github.com/MekusB/sre-proj-upgrade
     targetRevision: main
-    path: helm/workers/shipping-worker
+    path: kustomize/overlays/dev/shipping-worker
 
   destination:
     server: https://kubernetes.default.svc

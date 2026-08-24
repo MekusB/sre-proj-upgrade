@@ -1,6 +1,8 @@
 ﻿# SRE Platform — Azure AKS Microservices
 
-**Terraform · AKS · ArgoCD GitOps · KEDA · Workload Identity · OpenTelemetry · Prometheus · Grafana · Application Insights**
+**Terraform · AKS · ArgoCD GitOps · KEDA · Workload Identity · OpenTelemetry · Prometheus · Grafana**
+
+> **2026-07-09**: Observability is now open-source only. Azure Application Insights and Log Analytics are commented out (not deleted) throughout Terraform, Kustomize/Helm values, and this README's diagrams below still describe the pre-2026-07-09 state in a few places pending a full rewrite — traces/logs currently have no destination (collected then dropped) until an open-source backend (Tempo/Loki) is wired in. See `README02/Infra-README.md` changelog for the full list of what changed.
 
 ---
 
@@ -18,7 +20,7 @@ A production-grade, event-driven microservices platform on Azure Kubernetes Serv
                                                                 │
                                                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                        AKS: jd-aks  (westus2)                   │
+│                        AKS: sre-aks  (westus2)                   │
 │                                                                   │
 │  ns: argocd                                                       │
 │  └─ ArgoCD  ──── watches git ────► reconciles all namespaces     │
@@ -183,9 +185,9 @@ All Azure resources are provisioned by Terraform. Configuration lives in `terraf
 
 | Setting | Value |
 |---|---|
-| Resource group | `jd-core-rg` |
+| Resource group | `sre-core-rg` |
 | Location | `westus2` |
-| AKS cluster | `jd-aks` |
+| AKS cluster | `sre-aks` |
 | Node VM size (system + user) | `Standard_D2s_v5` |
 | Node range | 1–3 per pool |
 | Service CIDR | `10.1.0.0/16` |
@@ -211,7 +213,6 @@ terraform output worker_client_ids           # → helm/workers/*/values.yaml
 terraform output keda_operator_client_id     # → kubernetes-platform/argocd/apps/keda.yaml
 terraform output cosmos_endpoint             # → helm/core-services/productcatalogservice/values.yaml
 terraform output -raw redis_hostname         # → cartservice redis secret
-terraform output -raw app_insights_connection_string  # → observability/app-insights/configmap.yaml
 ```
 
 ---
@@ -225,7 +226,7 @@ Zero credentials stored anywhere in the cluster or the repository.
 | Workers → Service Bus | Azure RBAC `Service Bus Data Receiver` via Workload Identity |
 | checkoutservice → Service Bus | Azure RBAC `Service Bus Data Sender` via Workload Identity |
 | productcatalogservice → Cosmos DB | Cosmos Native RBAC `Built-in Data Contributor` via Workload Identity |
-| cartservice → Redis | TLS connection string in Kubernetes Secret (no password in git) |
+| cartservice → Redis | TLS connection string held in Azure Key Vault, synced into the cluster as a Kubernetes Secret by the Key Vault CSI driver using cartservice's own workload identity — no password in git, no manual `kubectl create secret` step |
 | KEDA → Service Bus | Workload Identity via `TriggerAuthentication` — no SAS tokens |
 | Pod → Entra ID | OIDC projected service account token, validated by Entra ID |
 
@@ -260,7 +261,7 @@ kubernetes-platform/argocd/root-app.yaml
        ├─ emailservice.yaml
        ├─ frontend.yaml
        ├─ keda.yaml                   (kube-prometheus-stack v58.2.0)
-       ├─ observability-config.yaml   (App Insights ConfigMaps)
+       ├─ observability-config.yaml   (commented out 2026-07-09 — was App Insights ConfigMaps)
        ├─ otel-collector.yaml         (opentelemetry-collector v0.91.0)
        ├─ payment-worker.yaml
        ├─ paymentservice.yaml
@@ -399,8 +400,6 @@ This creates: resource group, VNet, AKS cluster, Cosmos DB, Service Bus, Redis, 
 Capture outputs:
 
 ```bash
-# Used in step 5
-terraform output -raw app_insights_connection_string
 terraform output -raw redis_hostname       # used to build the Redis connection string
 ```
 
@@ -410,8 +409,8 @@ terraform output -raw redis_hostname       # used to build the Redis connection 
 
 ```bash
 az aks get-credentials \
-  --resource-group jd-core-rg \
-  --name jd-aks \
+  --resource-group sre-core-rg \
+  --name sre-aks \
   --overwrite-existing
 
 kubectl get nodes
@@ -468,22 +467,15 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ---
 
-### Step 5 — Create the Redis secret
+### Step 5 — Paste the tenant ID into the cartservice SecretProviderClass
 
-The cartservice connects to Azure Cache for Redis. The connection string is not stored in git — create the secret manually:
+The Redis connection string itself is no longer a manual step — Terraform writes it to Azure Key Vault, and the Key Vault CSI driver syncs it into a `redis-secret` Kubernetes Secret automatically using cartservice's workload identity. The one manual paste left is the tenant ID (not sensitive, but not knowable ahead of `terraform apply` either):
 
 ```bash
-# Get the Redis primary key
-REDIS_HOST=$(cd terraform/environments/dev && terraform output -raw redis_hostname)
-REDIS_KEY=$(az redis list-keys \
-  --name sre-redis-cart \
-  --resource-group jd-core-rg \
-  --query primaryKey -o tsv)
-
-kubectl create secret generic redis-secret \
-  --namespace core \
-  --from-literal=connectionString="${REDIS_HOST}:6380,ssl=true,abortConnect=false,password=${REDIS_KEY}"
+cd terraform/environments/dev && terraform output -raw azure_tenant_id
 ```
+
+Paste that value into `tenantId:` in `kustomize/base/cartservice/secretproviderclass.yaml`, then commit — ArgoCD picks it up on the next sync. No `kubectl create secret` required.
 
 ---
 
@@ -529,11 +521,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # https://localhost:8080
 ```
 
-**Application Insights**
-```
-Azure Portal → Resource group jd-core-rg → sre-appinsights
-→ Transaction search / Live metrics / Application map
-```
+~~**Application Insights**~~ — commented out (2026-07-09, not open source). No trace/log UI exists until an open-source backend (Tempo/Loki) is wired into the OTEL Collector.
 
 ---
 
@@ -543,10 +531,10 @@ Azure Portal → Resource group jd-core-rg → sre-appinsights
 
 ```bash
 # Stop — eliminates compute billing, preserves all data
-az aks stop --name jd-aks --resource-group jd-core-rg
+az aks stop --name sre-aks --resource-group sre-core-rg
 
 # Resume
-az aks start --name jd-aks --resource-group jd-core-rg
+az aks start --name sre-aks --resource-group sre-core-rg
 ```
 
 ### Redis outbound IP update
@@ -555,8 +543,8 @@ If the AKS cluster is rebuilt, the Redis firewall rule (`aks_outbound_ip` in `co
 
 ```bash
 az aks show \
-  --name jd-aks \
-  --resource-group jd-core-rg \
+  --name sre-aks \
+  --resource-group sre-core-rg \
   --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" \
   -o tsv \
   | xargs az network public-ip show --ids --query ipAddress -o tsv
@@ -575,7 +563,7 @@ kubectl annotate application <app-name> \
 ### Tear down everything
 
 ```bash
-az group delete --name jd-core-rg --yes --no-wait
+az group delete --name sre-core-rg --yes --no-wait
 ```
 
 ---
@@ -593,6 +581,23 @@ az group delete --name jd-core-rg --yes --no-wait
 ## Author
 
 **Joshua Ukpozi**  
+
+
 Cloud Infrastructure Engineer  
 Azure · Kubernetes · Terraform · SRE · Observability
+
+---
+
+## Documentation Split (README--)
+
+Operational documentation is now split for clearer ownership and updates:
+
+- `README--/Infra-README.md`
+- `README--/DevOps-README.md`
+- `README--/SRE-README.md`
+
+Update rule:
+- Any change to process, architecture, or operations must be added under `Change Highlights` in the affected README with date + summary.
+
+This keeps infra, delivery, and reliability documentation independently maintainable while preserving a clear audit trail of what changed.
 

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-worker
+  namespace: workers
+  labels:
+    app: email-worker
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: email-worker
+  template:
+    metadata:
+      labels:
+        app: email-worker
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: emailservice-worker-sa
+      containers:
+        - name: email-worker
+          image: jukpozi/emailservice:latest
+          env:
+            - name: WORKER_MODE
+              value: "true"
+            - name: SERVICEBUS_NAMESPACE
+              value: "sre-sb-namespace"
+            - name: SERVICEBUS_TOPIC
+              value: "checkout-events"
+            - name: SERVICEBUS_SUBSCRIPTION
+              value: "email"
+            - name: DISABLE_PROFILER
+              value: "1"
+            - name: COLLECTOR_SERVICE_ADDR
+              value: "otel-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "email-worker"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

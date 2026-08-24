@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: productcatalogservice
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sre-platform
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    targetRevision: main
+    path: helm/core-services/productcatalogservice
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

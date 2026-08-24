@@ -115,7 +115,50 @@ resource "azurerm_cosmosdb_sql_role_assignment" "productcatalog_data_contributor
 }
 
 # ─── Redis IAM ────────────────────────────────────────────────────────────────
-# cartservice authenticates to Redis using the connection string stored in the
-# redis-secret Kubernetes Secret (access key). No Azure RBAC role is required
-# for data-plane access when using key authentication.
-# Management-plane access (portal/CLI) is covered by the subscription owner role.
+# cartservice authenticates to Redis using a connection string (access key),
+# not Azure RBAC — Azure Cache for Redis data-plane access is key-based, not
+# identity-based. What IS identity-based is how that connection string reaches
+# the pod: cartservice's workload identity reads it out of Key Vault via the
+# CSI driver (see the role assignment below), instead of a manually-created
+# Kubernetes Secret.
+
+resource "azurerm_role_assignment" "cartservice_keyvault_secrets_user" {
+  scope                = var.keyvault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.worker["cartservice-worker"].principal_id
+}
+
+# ─── AKS → ACR pull ────────────────────────────────────────────────────────────
+# Lets every node pool's kubelet identity pull images from the registry without
+# an imagePullSecret (equivalent to `az aks update --attach-acr`).
+
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = var.acr_id
+  role_definition_name = "AcrPull"
+  principal_id         = var.aks_kubelet_identity_object_id
+}
+
+# ─── GitHub Actions → ACR push (OIDC, no stored credentials) ──────────────────
+# CI authenticates as this identity via azure/login's OIDC federation — no
+# client secret or registry password stored in GitHub. Trust is scoped to a
+# single repo and ref, so a workflow run on another repo/branch can't assume it.
+
+resource "azurerm_user_assigned_identity" "github_actions" {
+  name                = "github-actions-ci"
+  location            = var.location
+  resource_group_name = var.rg_name
+}
+
+resource "azurerm_federated_identity_credential" "github_actions" {
+  name      = "github-actions-ci"
+  parent_id = azurerm_user_assigned_identity.github_actions.id
+  audience  = ["api://AzureADTokenExchange"]
+  issuer    = "https://token.actions.githubusercontent.com"
+  subject   = "repo:${var.github_repo}:ref:${var.github_ref}"
+}
+
+resource "azurerm_role_assignment" "github_actions_acr_push" {
+  scope                = var.acr_id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_user_assigned_identity.github_actions.principal_id
+}

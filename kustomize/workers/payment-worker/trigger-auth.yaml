@@ -1,0 +1,9 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: payment-worker-trigger-auth
+  namespace: workers
+spec:
+  podIdentity:
+    provider: azure-workload
+    identityId: "b023641f-3f8a-45b0-a768-81cd63548666"

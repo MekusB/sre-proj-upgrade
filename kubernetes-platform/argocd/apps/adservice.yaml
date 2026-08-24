@@ -10,9 +10,9 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    repoURL: https://github.com/MekusB/sre-proj-upgrade
     targetRevision: main
-    path: helm/core-services/adservice
+    path: kustomize/overlays/dev/adservice
 
   destination:
     server: https://kubernetes.default.svc

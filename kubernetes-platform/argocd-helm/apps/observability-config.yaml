@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-config
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jaeveloper/sre-proj-upgrade
+    targetRevision: main
+    path: kubernetes-platform/observability/app-insights
+  destination:
+    server: https://kubernetes.default.svc
+    # No namespace override — each manifest's own metadata.namespace is used
+    namespace: ""
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
