@@ -47,7 +47,7 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: "productcatalogservice"
             - name: COSMOS_ENDPOINT
-              value: "https://sre-cosmos.documents.azure.com:443/"
+              value: "https://sre-pj-cosmos.documents.azure.com:443/"
             - name: COSMOS_DATABASE
               value: "product-catalog-db"
             - name: COSMOS_CONTAINER

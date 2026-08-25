@@ -6,4 +6,4 @@ metadata:
 spec:
   podIdentity:
     provider: azure-workload
-    identityId: "5128d644-0463-4e9d-bad8-fa2d26882f89"
+    identityId: "b3aa47bc-436c-4e94-a6ee-86bd4b3074bd"
