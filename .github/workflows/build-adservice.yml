@@ -43,8 +43,9 @@ jobs:
         with:
           languages: java-kotlin
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Build for CodeQL
+        working-directory: services/adservice
+        run: ./gradlew clean build -x test
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
