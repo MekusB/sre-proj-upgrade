@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/currencyservice
     newName: srepjcoreacr.azurecr.io/currencyservice
-    newTag: latest
+    newTag: 2bca2e4de8e831a76e2a7bacc046d3b1b69833b3
