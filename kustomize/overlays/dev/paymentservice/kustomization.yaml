@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/paymentservice
     newName: srepjcoreacr.azurecr.io/paymentservice
-    newTag: 03ad3c0af6a230b1fb84de17beefdbf0f13f1cc3
+    newTag: 20f1ce3ea1c188a37672d3d330260d19d55c0883
