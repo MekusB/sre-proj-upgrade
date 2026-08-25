@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/shippingservice
     newName: srepjcoreacr.azurecr.io/shippingservice
-    newTag: da38b548fc7f2ec0b227fbf6985ea1da15589485
+    newTag: 20f1ce3ea1c188a37672d3d330260d19d55c0883
