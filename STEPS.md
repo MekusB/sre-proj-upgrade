@@ -75,16 +75,22 @@ For your README, this is another good "lab shortcut vs production" callout: prod
 - [x] 15. Get real AKS outbound IP and update `redis.aks_outbound_ip` in `config.yaml` — done, IP is `20.3.53.152` (2nd value — see 2026-08-25 full-redeploy note below). `terraform apply` re-run confirmed live via `az redis firewall-rules list` — `allow_aks_egress` = `20.3.53.152`
 - [x] 13b. Re-ran `az aks get-credentials --resource-group sre-core-rg --name sre-aks --overwrite-existing` — `kubectl get nodes` confirms both node pools `Ready`
 - [x] 14b. Re-installed ArgoCD via Helm on the new cluster — all 7 pods (`application-controller`, `applicationset-controller`, `dex-server`, `notifications-controller`, `redis`, `repo-server`, `server`) `Running`/`1/1` in the `argocd` namespace
-- [~] 16. Commit and push all changes to `main` — triggers all 10 build workflows, populating the (now-empty, recreated) ACR with real images. Only `adservice` done so far — 9 more to go
-- [~] 17. Verify all 10 workflow runs succeed (Actions tab) — `adservice` succeeded; rest not yet run
+- [x] 16. Commit and push all changes to `main` — all 10 core-service build workflows (plus loadgenerator) have now succeeded end to end, each landing its own tag-bump commit; ACR fully populated with real images
+- [x] 17. Verify all 10 workflow runs succeed (Actions tab) — confirmed via tag-bump commits on `main` for every service (adservice, cartservice, checkoutservice, currencyservice, emailservice, frontend, loadgenerator, paymentservice, productcatalogservice, recommendationservice, shippingservice). Hit and fixed several real bugs along the way — see the 2026-08-25 notes below (CodeQL/Trivy disabled, gradlew/npm/go.mod dirty-tree bugs, DockerHub→ACR migration for shoppingassistantservice, stale ACR hostname, stale Cosmos endpoint, stale KEDA TriggerAuthentication identity IDs)
 - [x] 18. `kubectl apply -f kubernetes-platform/argocd/root-app.yaml` — applied, all 19 Applications appeared within ~15s
-- [~] 19. Verify all ArgoCD Applications are `Synced`/`Healthy` (`kubectl get applications -n argocd`) — most `Synced`/`Degraded` (waiting on real images), a few `OutOfSync`/`Missing` (pending first reconcile)
-- [ ] 20. Verify pods running in `core`, `workers`, `keda`, `observability`, `argocd` namespaces
-- [ ] 21. Access frontend via LoadBalancer external IP and confirm the storefront loads end-to-end (browse → add to cart → checkout)
+- [x] 19. Verify all ArgoCD Applications are `Synced`/`Healthy` (`kubectl get applications -n argocd`) — all `Synced`. Most core services show `Degraded` due to a cosmetic PodDisruptionBudget quirk (`minAvailable: 1` with 1 replica → `disruptionsAllowed: 0`, which ArgoCD's default health check flags even though pods are genuinely healthy) — not a real problem, documented in the 2026-08-25 cluster-audit note. `keda`/`prometheus` show `Unknown` sync status, a benign ArgoCD/Helm quirk (both explicitly report "successfully synced")
+- [x] 20. Verify pods running in `core`, `workers`, `keda`, `observability`, `argocd` namespaces — `core` all `1/1 Running` (10/10 services); `workers` correctly at 0/0 replicas (KEDA scale-to-zero, `ScaledObject`s `READY`, working as designed — not a bug); `keda` all 3 pods `Running`; `argocd` all 7 pods `Running`; `observability` apps (`prometheus`, `otel-collector`, `prometheus-monitors`) all `Healthy` in ArgoCD
+- [x] 21. Access frontend via LoadBalancer external IP and confirm the storefront loads end-to-end (browse → add to cart → checkout) — external IP `20.252.78.182`, confirmed `HTTP 200` and pod healthy; user confirmed full browse → add to cart → checkout flow works end to end
 
 ---
 
-## Part 2 — Documentation accuracy fixes
+## Part 2 — SRE setup
+
+- [x] 26. Prometheus + Grafana + Alertmanager — already deployed, no manual command run. `kubernetes-platform/argocd/apps/prometheus.yaml` (an ArgoCD `Application` pointed at the public `kube-prometheus-stack` Helm chart, v58.2.0) predates this session (commit `01474ec`). It deployed itself automatically the same way every other app did: step 18 (`kubectl apply -f kubernetes-platform/argocd/root-app.yaml`) made ArgoCD auto-discover every file in `kubernetes-platform/argocd/apps/`, including this one, and `syncPolicy.automated` then pulled + rendered + applied the chart with no `helm install`/`helm repo add` ever typed by hand. Confirmed live in `observability` namespace: `prometheus-grafana`, `alertmanager-*`, `prometheus-*` (server), `prometheus-kube-state-metrics`, `prometheus-*-node-exporter` (one per node) — all `Running`.
+
+---
+
+## Part 3 — Documentation accuracy fixes
 
 - [x] 22. Added GitHub CodeQL (init → autobuild → analyze) to all 12 `.github/workflows/build-*.yml`, immediately before the "Build Docker image" step, language-matched per service — **since disabled, see 2026-08-25 note below**
 - [ ] 23. Correct pipeline documentation: images push to **Azure Container Registry**, not Docker Hub (migrated 2026-07-08) — update any description that still says Docker Hub
