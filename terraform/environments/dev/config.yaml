@@ -53,7 +53,16 @@ keyvault:
 # <org>/<repo> — scopes the GitHub Actions OIDC federated credential subject so
 # only workflow runs from this exact repo (on github_ref, default main) can
 # assume the CI identity and push to ACR.
-github_repo: "MekusB/sre-proj-upgrade"
+#
+# NOTE: not just "<org>/<repo>" — GitHub's OIDC subject claim now embeds the
+# numeric owner ID and repo ID (e.g. "MekusB@100003404/sre-proj-upgrade@1341928717")
+# to stop a subject claim being reused if a username or repo gets renamed/
+# reassigned later. A federated credential built from the plain slug alone
+# gets AADSTS700213 "No matching federated identity record found" even
+# though the repo name is exactly right. Get the real value from a failed
+# azure/login run's own log ("subject claim - repo:...") and paste it here
+# verbatim, or from `gh api repos/<org>/<repo> --jq '.owner.id, .id'`.
+github_repo: "MekusB@100003404/sre-proj-upgrade@1341928717"
 
 # Absolute path to python.exe on the machine running `terraform apply`, used
 # by the Cosmos-seeding local-exec provisioner. Not "python"/"py" — on
