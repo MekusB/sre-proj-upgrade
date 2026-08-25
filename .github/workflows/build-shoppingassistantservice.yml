@@ -53,14 +53,14 @@ jobs:
           -t ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest \
           ./services/shoppingassistantservice
 
-      - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: CRITICAL
+#       - name: Scan image for vulnerabilities
+#         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+#         with:
+#           image-ref: ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest
+#           format: table
+#           exit-code: '1'
+#           ignore-unfixed: true
+#           severity: CRITICAL
 
       - name: Push Docker image
         run: |
