@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/cartservice
     newName: srepjcoreacr.azurecr.io/cartservice
-    newTag: latest
+    newTag: ca29045831cf30e961432738a730cfe1e74ebfe7
