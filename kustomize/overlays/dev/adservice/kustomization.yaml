@@ -4,5 +4,5 @@ resources:
   - ../../../base/adservice
 images:
   - name: jukpozi/adservice
-    newName: srecoreacr.azurecr.io/adservice
+    newName: srepjcoreacr.azurecr.io/adservice
     newTag: 23f6ba3ce3a219621dc69b30164d21383d2b2c27

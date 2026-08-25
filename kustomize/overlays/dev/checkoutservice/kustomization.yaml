@@ -4,5 +4,5 @@ resources:
   - ../../../base/checkoutservice
 images:
   - name: jukpozi/checkoutservice
-    newName: srecoreacr.azurecr.io/checkoutservice
+    newName: srepjcoreacr.azurecr.io/checkoutservice
     newTag: latest

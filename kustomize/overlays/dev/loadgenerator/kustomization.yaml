@@ -4,5 +4,5 @@ resources:
   - ../../../base/loadgenerator
 images:
   - name: jukpozi/loadgenerator
-    newName: srecoreacr.azurecr.io/loadgenerator
+    newName: srepjcoreacr.azurecr.io/loadgenerator
     newTag: latest

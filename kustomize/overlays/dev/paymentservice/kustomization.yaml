@@ -4,5 +4,5 @@ resources:
   - ../../../base/paymentservice
 images:
   - name: jukpozi/paymentservice
-    newName: srecoreacr.azurecr.io/paymentservice
+    newName: srepjcoreacr.azurecr.io/paymentservice
     newTag: latest

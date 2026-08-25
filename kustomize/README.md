@@ -34,4 +34,4 @@ kubectl kustomize kustomize/overlays/dev/<service>
 
 ## Registry (2026-07-08)
 
-Every overlay's `images:` block sets `newName: srecoreacr.azurecr.io/<service>`, replacing Docker Hub (`jukpozi/*`). CI (`.github/workflows/build-*.yml`) now pushes there directly and bumps `newTag:` in the relevant overlay(s) on every build — see `README02/DevOps-README.md` for the exact flow and the required GitHub repo secrets.
+Every overlay's `images:` block sets `newName: srepjcoreacr.azurecr.io/<service>`, replacing Docker Hub (`jukpozi/*`). CI (`.github/workflows/build-*.yml`) now pushes there directly and bumps `newTag:` in the relevant overlay(s) on every build — see `README02/DevOps-README.md` for the exact flow and the required GitHub repo secrets.

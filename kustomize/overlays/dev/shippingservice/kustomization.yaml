@@ -4,5 +4,5 @@ resources:
   - ../../../base/shippingservice
 images:
   - name: jukpozi/shippingservice
-    newName: srecoreacr.azurecr.io/shippingservice
+    newName: srepjcoreacr.azurecr.io/shippingservice
     newTag: latest

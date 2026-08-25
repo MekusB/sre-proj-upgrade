@@ -4,5 +4,5 @@ resources:
   - ../../../base/currencyservice
 images:
   - name: jukpozi/currencyservice
-    newName: srecoreacr.azurecr.io/currencyservice
+    newName: srepjcoreacr.azurecr.io/currencyservice
     newTag: latest

@@ -4,5 +4,5 @@ resources:
   - ../../../base/frontend
 images:
   - name: jukpozi/frontend
-    newName: srecoreacr.azurecr.io/frontend
+    newName: srepjcoreacr.azurecr.io/frontend
     newTag: latest

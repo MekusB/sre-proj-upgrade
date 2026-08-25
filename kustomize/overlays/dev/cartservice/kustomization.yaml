@@ -4,5 +4,5 @@ resources:
   - ../../../base/cartservice
 images:
   - name: jukpozi/cartservice
-    newName: srecoreacr.azurecr.io/cartservice
+    newName: srepjcoreacr.azurecr.io/cartservice
     newTag: latest

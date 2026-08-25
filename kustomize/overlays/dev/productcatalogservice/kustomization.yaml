@@ -4,5 +4,5 @@ resources:
   - ../../../base/productcatalogservice
 images:
   - name: jukpozi/productcatalogservice
-    newName: srecoreacr.azurecr.io/productcatalogservice
+    newName: srepjcoreacr.azurecr.io/productcatalogservice
     newTag: latest

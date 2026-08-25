@@ -4,5 +4,5 @@ resources:
   - ../../../workers/email-worker
 images:
   - name: jukpozi/emailservice
-    newName: srecoreacr.azurecr.io/emailservice
+    newName: srepjcoreacr.azurecr.io/emailservice
     newTag: latest
