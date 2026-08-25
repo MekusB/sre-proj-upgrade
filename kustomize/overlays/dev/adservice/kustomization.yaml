@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/adservice
     newName: srepjcoreacr.azurecr.io/adservice
-    newTag: 23f6ba3ce3a219621dc69b30164d21383d2b2c27
+    newTag: 3f7b3380a3f9719aabe4a9a5ff99d493fb7f4312
