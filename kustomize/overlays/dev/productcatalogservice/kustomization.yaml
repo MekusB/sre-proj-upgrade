@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/productcatalogservice
     newName: srepjcoreacr.azurecr.io/productcatalogservice
-    newTag: latest
+    newTag: 5c5742d471377c9c26be00abeea5df1aa56480c2
