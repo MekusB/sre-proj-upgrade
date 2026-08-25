@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/frontend
     newName: srepjcoreacr.azurecr.io/frontend
-    newTag: latest
+    newTag: 0453aa8d5a56a993dc322fea670cde56c9a98efd
