@@ -11,6 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
       security-events: write
 
@@ -32,11 +33,12 @@ jobs:
         run: python -m pytest
         continue-on-error: true
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
 #       - name: Initialize CodeQL
 #         uses: github/codeql-action/init@v3
@@ -50,18 +52,20 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-          -t ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/shoppingassistantservice:${{ github.sha }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/shoppingassistantservice:latest \
           ./services/shoppingassistantservice
 
 #       - name: Scan image for vulnerabilities
 #         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
 #         with:
-#           image-ref: ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest
+#           image-ref: ${{ secrets.ACR_LOGIN_SERVER }}/shoppingassistantservice:${{ github.sha }}
 #           format: table
 #           exit-code: '1'
 #           ignore-unfixed: true
 #           severity: CRITICAL
 
-      - name: Push Docker image
+      - name: Push image to ACR
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/shoppingassistantservice:latest
+          az acr login --name ${{ secrets.ACR_NAME }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/shoppingassistantservice --all-tags
