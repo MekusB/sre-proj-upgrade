@@ -27,7 +27,3 @@ docker build ./
 ```
 
 
-
-
-
-
