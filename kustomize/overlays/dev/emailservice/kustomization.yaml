@@ -5,4 +5,4 @@ resources:
 images:
   - name: jukpozi/emailservice
     newName: srepjcoreacr.azurecr.io/emailservice
-    newTag: 9900e3462ba62dc01ed41568f5ee75d19b9986e4
+    newTag: 20f1ce3ea1c188a37672d3d330260d19d55c0883
