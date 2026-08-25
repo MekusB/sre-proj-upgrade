@@ -1,6 +1,0 @@
-apiVersion: v2
-name: emailservice
-description: Online Boutique emailservice – Python gRPC server, port 5000
-type: application
-version: 0.1.0
-appVersion: "latest"

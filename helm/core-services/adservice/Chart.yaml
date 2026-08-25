@@ -1,6 +1,0 @@
-apiVersion: v2
-name: adservice
-description: Online Boutique adservice – Java gRPC server, port 9555
-type: application
-version: 0.1.0
-appVersion: "latest"

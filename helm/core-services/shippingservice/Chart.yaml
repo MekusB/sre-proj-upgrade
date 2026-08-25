@@ -1,6 +1,0 @@
-apiVersion: v2
-name: shippingservice
-description: Online Boutique shippingservice – Go gRPC server, port 50051
-type: application
-version: 0.1.0
-appVersion: "latest"

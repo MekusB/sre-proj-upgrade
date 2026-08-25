@@ -1,9 +1,0 @@
-apiVersion: keda.sh/v1alpha1
-kind: TriggerAuthentication
-metadata:
-  name: {{ .Values.name }}-trigger-auth
-  namespace: {{ .Values.namespace }}
-spec:
-  podIdentity:
-    provider: azure-workload
-    identityId: {{ .Values.serviceAccount.clientId }}

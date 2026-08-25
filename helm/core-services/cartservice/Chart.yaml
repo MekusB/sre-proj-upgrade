@@ -1,6 +1,0 @@
-apiVersion: v2
-name: cartservice
-description: Online Boutique cartservice – .NET gRPC server, port 7070
-type: application
-version: 0.1.0
-appVersion: "latest"

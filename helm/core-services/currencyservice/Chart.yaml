@@ -1,6 +1,0 @@
-apiVersion: v2
-name: currencyservice
-description: Online Boutique currencyservice – Node.js gRPC server, port 7000
-type: application
-version: 0.1.0
-appVersion: "latest"

@@ -37,7 +37,7 @@ redis:
   # ID's leading "/" gets mangled into a Windows path):
   #   ID=$(az aks show --name sre-aks --resource-group sre-core-rg --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
   #   MSYS_NO_PATHCONV=1 az network public-ip show --ids "$ID" --query ipAddress -o tsv
-  aks_outbound_ip: "48.200.80.188"
+  aks_outbound_ip: "20.3.53.152"
 
 acr:
   # Must be globally unique across Azure (alphanumeric only, no hyphens, 5-50 chars).

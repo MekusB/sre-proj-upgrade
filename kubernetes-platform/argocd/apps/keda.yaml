@@ -18,7 +18,7 @@ spec:
         podIdentity:
           azureWorkload:
             enabled: true
-            clientId: "ba75ea83-4923-48a0-aa63-35b59053dfa9"
+            clientId: "091a0f5a-bb24-4f1b-89de-ab7fa819b43d"
             tenantId: "104704fd-f711-4575-99d5-8a6588951c90"
 
   destination:

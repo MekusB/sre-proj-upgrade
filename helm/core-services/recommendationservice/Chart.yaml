@@ -1,6 +1,0 @@
-apiVersion: v2
-name: recommendationservice
-description: Online Boutique recommendationservice – Python gRPC server, port 8080
-type: application
-version: 0.1.0
-appVersion: "latest"
